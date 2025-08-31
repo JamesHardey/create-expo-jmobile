@@ -14,6 +14,15 @@ const run = async () => {
       name: "appName",
       message: "What is your app name?",
       initial: "my-expo-app",
+      validate: value => {
+        if (value.includes(" ")) {
+          return "App name cannot contain spaces. Use hyphens or underscores instead.";
+        }
+        if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+          return "App name can only contain letters, numbers, hyphens, and underscores.";
+        }
+        return true;
+      }
     },
     {
       type: "select",
@@ -77,7 +86,14 @@ const run = async () => {
   });
 
   const appPath = path.join(process.cwd(), appName);
-  process.chdir(appPath);
+  // Handle spaces in directory name by using quotes
+  try {
+    process.chdir(appPath);
+  } catch (err) {
+    console.error(chalk.red(`\n❌ Error: Could not change to directory: ${appPath}`));
+    console.error(chalk.red(`Please ensure the app name doesn't contain spaces or special characters.`));
+    process.exit(1);
+  }
 
   // Step 2: Install dependencies
   const dependencies = [
@@ -100,7 +116,6 @@ const run = async () => {
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./App.{js,jsx,ts,tsx}", 
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
     "./features/**/*.{js,jsx,ts,tsx}"
@@ -1139,18 +1154,7 @@ module.exports = withNativeWind(config, { input: "./global.css" });
 `;
   fs.writeFileSync(path.join(appPath, "metro.config.js"), metroConfig);
 
-  // Step 15: Update App.tsx for Expo Router
-  const appTsx = `
-import React from "react";
-import { Slot } from "expo-router";
-
-export default function App() {
-  return <Slot />;
-}
-`;
-  fs.writeFileSync(path.join(appPath, "App.tsx"), appTsx);
-
-  // Step 16: Create utility hooks
+  // Step 15: Create utility hooks
   const useThemeHook = `
 import { theme } from "../constants/theme";
 
@@ -1195,7 +1199,7 @@ export const formatters = {
 
   // Step 18: Update package.json
   const packageJson = JSON.parse(fs.readFileSync(path.join(appPath, "package.json"), "utf8"));
-  packageJson.main = "expo-router/entry";
+  packageJson.main = "./app/_layout.tsx";
   fs.writeFileSync(path.join(appPath, "package.json"), JSON.stringify(packageJson, null, 2));
 
   console.log(chalk.green(`\n🎉 Modern Expo boilerplate created successfully!`));
