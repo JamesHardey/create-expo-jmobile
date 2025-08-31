@@ -109,6 +109,16 @@ const run = async () => {
     `expo-google-fonts-${font.toLowerCase()}`
   ];
 
+  const devDependencies = [
+    "@types/react",
+    "@types/react-native",
+    "@babel/preset-typescript",
+    "typescript",
+    "tailwindcss",
+  ];
+
+  await execa("npm", ["install", "-D", ...devDependencies], { stdio: "inherit" });
+
   await execa("npm", ["install", ...dependencies], { stdio: "inherit" });
 
   // Step 3: Setup Tailwind config
@@ -1097,7 +1107,7 @@ export default function HomeScreen() {
 import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import { SplashScreen } from "expo-splash-screen";
+import * as SplashScreen from "expo-splash-screen";
 import "../global.css";
 
 // Keep the splash screen visible while we fetch resources
@@ -1154,6 +1164,24 @@ module.exports = withNativeWind(config, { input: "./global.css" });
 `;
   fs.writeFileSync(path.join(appPath, "metro.config.js"), metroConfig);
 
+  // Create babel.config.js
+  const babelConfig = `
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ["babel-preset-expo"],
+    plugins: ["nativewind/babel"],
+  };
+};
+`;
+  fs.writeFileSync(path.join(appPath, "babel.config.js"), babelConfig);
+
+  // Create app.d.ts for NativeWind types
+  const appDts = `
+/// <reference types="nativewind/types" />
+`;
+  fs.writeFileSync(path.join(appPath, "app.d.ts"), appDts);
+
   // Step 15: Create utility hooks
   const useThemeHook = `
 import { theme } from "../constants/theme";
@@ -1197,10 +1225,43 @@ export const formatters = {
 `;
   fs.writeFileSync(path.join(appPath, "utils", "validation.ts"), validationUtils);
 
-  // Step 18: Update package.json
+  // Step 18: Update package.json and TypeScript configuration
   const packageJson = JSON.parse(fs.readFileSync(path.join(appPath, "package.json"), "utf8"));
   packageJson.main = "./app/_layout.tsx";
   fs.writeFileSync(path.join(appPath, "package.json"), JSON.stringify(packageJson, null, 2));
+
+  // Create tsconfig.json
+  const tsconfigJson = {
+    "extends": "expo/tsconfig.base",
+    "compilerOptions": {
+      "strict": true,
+      "esModuleInterop": true,
+      "jsx": "react-native",
+      "target": "esnext",
+      "lib": ["dom", "esnext"],
+      "allowJs": true,
+      "skipLibCheck": true,
+      "noEmit": true,
+      "allowImportingTsExtensions": true,
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "moduleResolution": "node",
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./*"]
+      }
+    },
+    "include": [
+      "**/*.ts",
+      "**/*.tsx",
+      ".expo/types/**/*.ts",
+      "expo-env.d.ts"
+    ],
+    "exclude": [
+      "node_modules"
+    ]
+  };
+  fs.writeFileSync(path.join(appPath, "tsconfig.json"), JSON.stringify(tsconfigJson, null, 2));
 
   console.log(chalk.green(`\n🎉 Modern Expo boilerplate created successfully!`));
   console.log(chalk.cyan(`\n📁 Project Structure:`));
