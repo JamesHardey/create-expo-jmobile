@@ -1,6 +1,6 @@
 {
   "name": "create-expo-jmobile",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A modern CLI tool to create Expo apps with reusable components, custom theming, and navigation setup",
   "main": "index.js",
   "type": "module",
@@ -13,7 +13,7 @@
   },
   "keywords": [
     "expo",
-    "react-native", 
+    "react-native",
     "cli",
     "boilerplate",
     "tailwindcss",
